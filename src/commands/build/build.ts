@@ -108,7 +108,14 @@ export default class BuildCommand {
     const tmpDir = fs.mkdtempSync(`build-${sanitizeAddOnId(addOnId)}`)
     const tmpReleasePath = path.join(tmpDir, releaseFileName)
 
-    fs.copyFileSync(releasePath, tmpReleasePath)
+    try {
+      fs.copyFileSync(releasePath, tmpReleasePath)
+    } catch (error) {
+      log(chalk.red(`Failed to copy release file: ${error}`))
+      await restoreSymlinks()
+      fs.rmSync(tmpDir, { recursive: true, force: true })
+      return
+    }
 
     await restoreSymlinks()
 
