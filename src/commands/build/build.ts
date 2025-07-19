@@ -11,6 +11,10 @@ import type { AddOn, BuildJson } from '@/types'
 
 import SymlinkManager from './symlinkManager.ts'
 
+interface BuildCommandOptions {
+  php: string
+}
+
 export default class BuildCommand {
   static register(program: Command) {
     const self = new this()
@@ -19,12 +23,13 @@ export default class BuildCommand {
       .command('build')
       .description('Build an add-on')
       .argument('<addon-id>', 'The ID of the add-on to build')
+      .option('--php <php>', 'Path to the PHP executable', 'php')
       .action(self.exec.bind(self))
   }
 
   symlinkManager: SymlinkManager = new SymlinkManager()
 
-  async exec(addOnId: string) {
+  async exec(addOnId: string, options: BuildCommandOptions) {
     const pwd = process.cwd()
 
     if (!fs.existsSync(path.resolve(pwd, 'cmd.php'))) {
@@ -68,7 +73,7 @@ export default class BuildCommand {
     ]
 
     if (!symlinksToDetach.length) {
-      await this.runBuildCommand(addOnId)
+      await this.runBuildCommand(addOnId, options.php)
       return
     }
 
@@ -87,7 +92,7 @@ export default class BuildCommand {
     }
 
     try {
-      await this.runBuildCommand(addOnId)
+      await this.runBuildCommand(addOnId, options.php)
     } catch {
       await restoreSymlinks()
       return
@@ -127,9 +132,9 @@ export default class BuildCommand {
     log(chalk.green('Build completed successfully 🔥'))
   }
 
-  runBuildCommand(addonId: string): Promise<void> {
+  runBuildCommand(addonId: string, php: string): Promise<void> {
     const pwd = process.cwd()
-    const cmd = `php cmd.php xf-addon:build ${addonId}`
+    const cmd = `${php} cmd.php xf-addon:build ${addonId}`
 
     log(chalk.blue(`Running build command: ${cmd}`))
 
