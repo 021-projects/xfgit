@@ -19,3 +19,7 @@ export type BuildJson = {
   additional_files?: string[]
   minify?: string[]
 }
+
+interface ProjectConfig {
+  exclude?: string[]
+}

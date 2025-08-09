@@ -2,12 +2,17 @@ import chalk from 'chalk'
 import { type Command } from 'commander'
 import fs from 'fs'
 import { log } from 'helpers/console.ts'
+import projectConfig from 'helpers/projectConfig.ts'
 import path from 'path'
 
 import config from '@/config.ts'
 
 export default class LinkCommand {
-  skipRules = ['.gitignore', (file: string) => file.startsWith('.')]
+  skipRules = [
+    'xfgit.json',
+    '.gitignore',
+    (file: string) => file.startsWith('.'),
+  ]
 
   static register(program: Command) {
     const self = new this()
@@ -30,6 +35,19 @@ export default class LinkCommand {
     if (!fs.existsSync(targetPath)) {
       log(chalk.red('Target directory does not exist:', targetPath))
       process.exit(1)
+    }
+
+    if (projectConfig.exclude && Array.isArray(projectConfig.exclude)) {
+      this.skipRules.push(
+        ...projectConfig.exclude.map((rule) => {
+          // Absolute path
+          if (rule.startsWith('/')) {
+            return rule
+          }
+
+          return `${pwd}/${rule}`
+        }),
+      )
     }
 
     const pathMappings = {
