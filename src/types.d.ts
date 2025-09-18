@@ -18,6 +18,7 @@ export type AddOn = {
 export type BuildJson = {
   additional_files?: string[]
   minify?: string[]
+  'xfgit.pre-build.exec'?: string[]
 }
 
 interface ProjectConfig {

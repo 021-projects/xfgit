@@ -73,6 +73,10 @@ export default class BuildCommand {
     ]
 
     if (!symlinksToDetach.length) {
+      if (buildJson['xfgit.pre-build.exec']) {
+        await this.runPreBuildCommands(buildJson['xfgit.pre-build.exec'])
+      }
+
       await this.runBuildCommand(addOnId, options.php)
       return
     }
@@ -92,6 +96,10 @@ export default class BuildCommand {
     }
 
     try {
+      if (buildJson['xfgit.pre-build.exec']) {
+        await this.runPreBuildCommands(buildJson['xfgit.pre-build.exec'])
+      }
+
       await this.runBuildCommand(addOnId, options.php)
     } catch {
       await restoreSymlinks()
@@ -130,6 +138,37 @@ export default class BuildCommand {
     log(chalk.green(`Release file created: ${chalk.underline(releasePath)}`))
 
     log(chalk.green('Build completed successfully 🔥'))
+  }
+
+  runPreBuildCommands(commands: string[]): Promise<void> {
+    const pwd = process.cwd()
+
+    return commands.reduce((prevPromise, cmd) => {
+      return prevPromise.then(() => {
+        log(chalk.blue(`Running pre-build command: ${cmd}`))
+
+        return new Promise<void>((resolve, reject) => {
+          exec(
+            cmd,
+            { cwd: pwd },
+            (error: Error | null, stdout: string, stderr: string) => {
+              if (error) {
+                log(chalk.red(`Error executing command: ${error.message}`))
+                reject(error)
+                return
+              }
+
+              if (stderr) {
+                log(chalk.yellow(stderr))
+              }
+
+              log(chalk.yellow(stdout))
+              resolve()
+            },
+          )
+        })
+      })
+    }, Promise.resolve())
   }
 
   runBuildCommand(addonId: string, php: string): Promise<void> {
