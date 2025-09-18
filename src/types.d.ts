@@ -18,7 +18,13 @@ export type AddOn = {
 export type BuildJson = {
   additional_files?: string[]
   minify?: string[]
-  'xfgit.pre-build.exec'?: string[]
+  xfgit?: BuildJsonXfGit
+}
+export type BuildJsonXfGit = {
+  exec_hooks?: {
+    'pre-symlink-detach'?: string[]
+    'pre-build'?: string[]
+  }
 }
 
 interface ProjectConfig {

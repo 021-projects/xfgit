@@ -7,7 +7,7 @@ import readFileJson from 'helpers/readFileJson.ts'
 import sanitizeAddOnId from 'helpers/sanitizeAddOnId.ts'
 import path from 'path'
 
-import type { AddOn, BuildJson } from '@/types'
+import type { AddOn, BuildJson, BuildJsonXfGit } from '@/types'
 
 import SymlinkManager from './symlinkManager.ts'
 
@@ -59,6 +59,15 @@ export default class BuildCommand {
       ? (readFileJson(buildJsonPath) as BuildJson)
       : {}
 
+    const runHookExec = async (
+      hook: keyof NonNullable<BuildJsonXfGit['exec_hooks']>,
+    ) => {
+      const hookCommands = buildJson.xfgit?.exec_hooks?.[hook] || []
+      if (hookCommands.length) {
+        await this.runHookCommands(hookCommands, hook)
+      }
+    }
+
     const additionalFiles = buildJson.additional_files || []
 
     const symlinksToDetach = [
@@ -73,13 +82,14 @@ export default class BuildCommand {
     ]
 
     if (!symlinksToDetach.length) {
-      if (buildJson['xfgit.pre-build.exec']) {
-        await this.runPreBuildCommands(buildJson['xfgit.pre-build.exec'])
-      }
+      await runHookExec('pre-symlink-detach')
+      await runHookExec('pre-build')
 
       await this.runBuildCommand(addOnId, options.php)
       return
     }
+
+    await runHookExec('pre-symlink-detach')
 
     const symlinkMap =
       await this.symlinkManager.detachSymlinks(symlinksToDetach)
@@ -96,10 +106,7 @@ export default class BuildCommand {
     }
 
     try {
-      if (buildJson['xfgit.pre-build.exec']) {
-        await this.runPreBuildCommands(buildJson['xfgit.pre-build.exec'])
-      }
-
+      await runHookExec('pre-build')
       await this.runBuildCommand(addOnId, options.php)
     } catch {
       await restoreSymlinks()
@@ -140,12 +147,12 @@ export default class BuildCommand {
     log(chalk.green('Build completed successfully 🔥'))
   }
 
-  runPreBuildCommands(commands: string[]): Promise<void> {
+  runHookCommands(commands: string[], hook: string): Promise<void> {
     const pwd = process.cwd()
 
     return commands.reduce((prevPromise, cmd) => {
       return prevPromise.then(() => {
-        log(chalk.blue(`Running pre-build command: ${cmd}`))
+        log(chalk.cyan(`[${hook}]`), chalk.blue(`Running command: ${cmd}`))
 
         return new Promise<void>((resolve, reject) => {
           exec(
