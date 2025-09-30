@@ -54,6 +54,12 @@ export default class BuildCommand {
       process.exit(1)
     }
 
+    const releasesDir = path.join(addOnPath, '_releases')
+    if (!fs.existsSync(releasesDir)) {
+      fs.mkdirSync(releasesDir)
+      log(chalk.blue(`Created _releases directory: ${releasesDir}`))
+    }
+
     const buildJsonPath = path.join(addOnPath, 'build.json')
     const buildJson: BuildJson = fs.existsSync(buildJsonPath)
       ? (readFileJson(buildJsonPath) as BuildJson)
