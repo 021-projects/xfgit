@@ -69,5 +69,5 @@ xfgit config -p
 ```
 
 ## Useful links
-[Best XenForo Add-ons](https://gnz.is/products/xenforo/addons/)
-[Custom Website Design & Development Services](https://studio.gnz.is/)
+- [Best XenForo Add-ons](https://gnz.is/products/xenforo/addons/)
+- [Custom Website Design & Development Services](https://studio.gnz.is/)
